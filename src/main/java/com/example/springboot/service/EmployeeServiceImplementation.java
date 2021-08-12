@@ -20,13 +20,19 @@ import org.springframework.stereotype.Service;
 
 import com.example.springboot.model.Employee;
 import com.example.springboot.repository.EmployeeRepository;
+import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
 import com.itextpdf.text.Font;
+import com.itextpdf.text.Font.FontFamily;
 import com.itextpdf.text.FontFactory;
+import com.itextpdf.text.Image;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.BarcodeQRCode;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
@@ -234,5 +240,91 @@ public class EmployeeServiceImplementation implements EmployeeService{
 				return false;
 			}
     }
+    @Override
+	public boolean createIDCard(Employee employee, ServletContext servletContext, HttpServletRequest request,
+			HttpServletResponse response) {
+    	Document document = new Document(PageSize.A4,15,15,45,30);
+		try
+		{
+	       String filePath = servletContext.getRealPath("/resources/reports");
+	       File file = new File(filePath);
+	       boolean exists = new File(filePath).exists();
+	       if(!exists)
+	       {
+	    	   new File(filePath).mkdirs();
+	    	   
+	       }
+	       
+	       PdfWriter writer = PdfWriter.getInstance(document,
+	    		   new FileOutputStream(file+"/"+"emp_"+employee.getId()+".pdf"));
+//	       System.out.println("Card generate korar chesta Hochche");
+	       document.open();
+	    
+	       PdfPTable table1 = new PdfPTable(2);
+	       
+	        table1.setWidths(new int[]{30,20});
+	        
+	        table1.setTotalWidth(555);
+	        
+	        Font bold = new Font(FontFamily.HELVETICA, 20, Font.BOLD);
+	        bold.setColor(0,139,139);
+	        PdfPCell cell = new PdfPCell(new Phrase("ID CARD",bold));
+	        cell.setColspan(2);
+	        cell.setBorder(Rectangle.NO_BORDER);
+	        cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+	        
+//	        System.out.println("Card generate korar chesta Hochche");
+	        
+	        String id = "Employee ID: emp_"+employee.getId();
+	        String name = "Name: "+employee.getFirstname()+" "+employee.getLastname();
+		    String email = "Email: "+employee.getEmail();
+		    
+		    PdfPCell cell1 = new PdfPCell(new Phrase("\n"));
+	        cell1.setBorder(Rectangle.NO_BORDER);
+	        cell1.setColspan(2);
+		    
+	        
+	        PdfPCell cell2 = new PdfPCell(new Phrase(id));
+	        cell2.setBorder(Rectangle.NO_BORDER);
+	        cell2.setHorizontalAlignment(Element.ALIGN_LEFT);
+	        
+	        BarcodeQRCode barcodeQRCode = new BarcodeQRCode(id+" "+name+" "+email, 1000, 1000, null);
+		    Image codeQrImage = barcodeQRCode.getImage();
+		    codeQrImage.scaleAbsolute(100, 100);
+		    PdfPCell cell3 = new PdfPCell(codeQrImage, false);
+		    cell3.setBorder(Rectangle.NO_BORDER);
+	        cell3.setRowspan(4);
+	        
+//	        System.out.println("Card generate korar chesta Hochche");
+	        PdfPCell cell4 = new PdfPCell(new Phrase(name));
+	        cell4.setHorizontalAlignment(Element.ALIGN_LEFT);
+	        cell4.setBorder(Rectangle.NO_BORDER);
+	        
+	        PdfPCell cell5 = new PdfPCell(new Phrase(email));
+	        cell5.setHorizontalAlignment(Element.ALIGN_LEFT);
+	        cell5.setBorder(Rectangle.NO_BORDER);
+	        
+	        PdfPCell cell6 = new PdfPCell(new Phrase("\n"));
+	        cell6.setBorder(Rectangle.NO_BORDER);
+	       	
+//	        System.out.println("Card generate korar chesta Hochche");
+	        table1.addCell(cell);
+	        table1.addCell(cell6);
+	        table1.addCell(cell3);
+	        table1.addCell(cell2);	        
+	        table1.addCell(cell4);
+	        table1.addCell(cell5);
+//	        table1.setBorder(new SolidBorder(1));
+	       document.add(table1);	       
+	       document.close();
+	       System.out.println("Card generate Hochche");
+	       return true;			
+	
+		}
+		catch(Exception ex)
+		{
+			return false;
+		}
+	}
 
 }

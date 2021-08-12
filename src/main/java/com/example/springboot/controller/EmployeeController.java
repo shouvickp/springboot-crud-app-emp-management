@@ -98,6 +98,19 @@ public class EmployeeController {
 		  }
 	}
 	
+	@RequestMapping(value="/icardDownload/{id}", method= RequestMethod.GET)
+	public void icardDownload(@PathVariable(value = "id") long id, HttpServletRequest request, HttpServletResponse response) {
+		Employee employee = employeeService.getEmployeeById(id);
+		boolean isFlag = employeeService.createIDCard(employee, servletContext , request, response);
+		 if(isFlag)
+		  {
+			  System.out.println("icard create hochche");
+			  String fullPath = request.getServletContext().getRealPath("resources/reports/"+"emp_"+id+".pdf");
+			  System.out.println(fullPath);
+			  filedownload(fullPath,response,"emp_"+id+"_IDCARD.pdf");
+		  }
+	}
+	
 	private void filedownload(String fullPath, HttpServletResponse response, String fileName) {
 		File file = new File(fullPath);
 		final int BUFFER_SIZE = 4096;

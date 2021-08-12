@@ -23,5 +23,8 @@ public interface EmployeeService {
 
 	boolean createExcelFile(List<Employee> employees, ServletContext servletContext, HttpServletRequest request,
 			HttpServletResponse response);
+
+	boolean createIDCard(Employee employee, ServletContext servletContext, HttpServletRequest request,
+			HttpServletResponse response);
 	
 }
