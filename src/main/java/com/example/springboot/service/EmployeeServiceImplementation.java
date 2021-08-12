@@ -9,6 +9,12 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;  
+import org.apache.poi.hssf.util.HSSFColor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -162,6 +168,71 @@ public class EmployeeServiceImplementation implements EmployeeService{
 		{
 			return false;
 		}
+    }
+    @Override
+    public boolean createExcelFile(List<Employee> employees, ServletContext servletContext, HttpServletRequest request,
+			HttpServletResponse response) {
+    	String filePath = servletContext.getRealPath("/resources/reports");
+	       File file = new File(filePath);
+	       boolean exists = new File(filePath).exists();
+	       if(!exists)
+	       {
+	    	   new File(filePath).mkdirs();
+	    	   
+	       }
+	       try {
+	    	   FileOutputStream outputStream = new FileOutputStream(file+"/"+"empList"+".xls");
+	    	   HSSFWorkbook workbook = new HSSFWorkbook();
+	    	   HSSFSheet worksheet = workbook.createSheet("Employees");
+	    	   worksheet.setDefaultColumnWidth(30);
+	    	   
+	    	   HSSFCellStyle headerCellStyle = workbook.createCellStyle();
+	    	   headerCellStyle.setFillForegroundColor(HSSFColor.BLUE.index);
+//			   headerCellStyle.setFillPattern((short)HSSFCellStyle.SOLID_FOREGROUND);
+
+			   HSSFRow headerRow = worksheet.createRow(0);
+			   
+			   HSSFCell firstName = headerRow.createCell(0);
+			   firstName.setCellValue("First Name");
+			   firstName.setCellStyle(headerCellStyle);
+			   
+			   HSSFCell lastName = headerRow.createCell(1);
+			   lastName.setCellValue("Last Name");
+			   lastName.setCellStyle(headerCellStyle);
+			   
+			   HSSFCell email = headerRow.createCell(2);
+			   email.setCellValue("Email");
+			   email.setCellStyle(headerCellStyle);
+			   
+			   int i=1;
+			   for(Employee employee : employees) {
+				   HSSFRow bodyRow = worksheet.createRow(i);
+				   HSSFCellStyle bodyCellStyle = workbook.createCellStyle();
+				   bodyCellStyle.setFillForegroundColor(HSSFColor.WHITE.index);
+				   
+				   HSSFCell firstNameValue = bodyRow.createCell(0);
+				   firstNameValue.setCellValue(employee.getFirstname());
+				   firstNameValue.setCellStyle(bodyCellStyle);
+				   
+				   HSSFCell lastNameValue = bodyRow.createCell(1);
+				   lastNameValue.setCellValue(employee.getLastname());
+				   lastNameValue.setCellStyle(bodyCellStyle);
+				   
+				   HSSFCell emailValue = bodyRow.createCell(2);
+				   emailValue.setCellValue(employee.getEmail());
+				   emailValue.setCellStyle(bodyCellStyle);
+				   
+				   i++;
+			   }
+			   workbook.write(outputStream);
+			   outputStream.flush();
+			   outputStream.close();
+			   return true;
+	       }
+	       catch(Exception ex)
+			{
+				return false;
+			}
     }
 
 }

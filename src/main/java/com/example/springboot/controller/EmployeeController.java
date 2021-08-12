@@ -132,7 +132,15 @@ public class EmployeeController {
 	
 	@RequestMapping(value="/downloadExcel", method= RequestMethod.GET)
 	public void createExcel(HttpServletRequest request, HttpServletResponse response) {
-		
+		List<Employee> employees = employeeService.getAllEmployees();
+		boolean isFlag = employeeService.createExcelFile(employees, servletContext , request, response);
+		 if(isFlag)
+		  {
+			  System.out.println("file create hochche");
+			  String fullPath = request.getServletContext().getRealPath("resources/reports/"+"empList"+".xls");
+			  System.out.println(fullPath);
+			  filedownload(fullPath,response,"empList.xls");
+		  }
 	}
 	
 	@RequestMapping(path = "/exportEmployeeList")
