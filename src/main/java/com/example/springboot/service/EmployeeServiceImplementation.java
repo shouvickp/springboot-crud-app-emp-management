@@ -2,6 +2,10 @@ package com.example.springboot.service;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,18 +13,24 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;  
-import org.apache.poi.hssf.util.HSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.springboot.model.Employee;
 import com.example.springboot.repository.EmployeeRepository;
-import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
@@ -187,44 +197,44 @@ public class EmployeeServiceImplementation implements EmployeeService{
 	    	   
 	       }
 	       try {
-	    	   FileOutputStream outputStream = new FileOutputStream(file+"/"+"empList"+".xls");
-	    	   HSSFWorkbook workbook = new HSSFWorkbook();
-	    	   HSSFSheet worksheet = workbook.createSheet("Employees");
+	    	   FileOutputStream outputStream = new FileOutputStream(file+"/"+"empList"+".xlsx");
+	    	   XSSFWorkbook workbook = new XSSFWorkbook();
+	    	   XSSFSheet worksheet = workbook.createSheet("Employees");
 	    	   worksheet.setDefaultColumnWidth(30);
 	    	   
-	    	   HSSFCellStyle headerCellStyle = workbook.createCellStyle();
-	    	   headerCellStyle.setFillForegroundColor(HSSFColor.BLUE.index);
-//			   headerCellStyle.setFillPattern((short)HSSFCellStyle.SOLID_FOREGROUND);
+	    	   XSSFCellStyle headerCellStyle = workbook.createCellStyle();
+	    	   headerCellStyle.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+			   headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-			   HSSFRow headerRow = worksheet.createRow(0);
+			   XSSFRow headerRow = worksheet.createRow(0);
 			   
-			   HSSFCell firstName = headerRow.createCell(0);
+			   XSSFCell firstName = headerRow.createCell(0);
 			   firstName.setCellValue("First Name");
 			   firstName.setCellStyle(headerCellStyle);
 			   
-			   HSSFCell lastName = headerRow.createCell(1);
+			   XSSFCell lastName = headerRow.createCell(1);
 			   lastName.setCellValue("Last Name");
 			   lastName.setCellStyle(headerCellStyle);
 			   
-			   HSSFCell email = headerRow.createCell(2);
+			   XSSFCell email = headerRow.createCell(2);
 			   email.setCellValue("Email");
 			   email.setCellStyle(headerCellStyle);
 			   
 			   int i=1;
 			   for(Employee employee : employees) {
-				   HSSFRow bodyRow = worksheet.createRow(i);
-				   HSSFCellStyle bodyCellStyle = workbook.createCellStyle();
-				   bodyCellStyle.setFillForegroundColor(HSSFColor.WHITE.index);
+				   XSSFRow bodyRow = worksheet.createRow(i);
+				   XSSFCellStyle bodyCellStyle = workbook.createCellStyle();
+				   bodyCellStyle.setFillForegroundColor(IndexedColors.WHITE.getIndex());
 				   
-				   HSSFCell firstNameValue = bodyRow.createCell(0);
+				   XSSFCell firstNameValue = bodyRow.createCell(0);
 				   firstNameValue.setCellValue(employee.getFirstname());
 				   firstNameValue.setCellStyle(bodyCellStyle);
 				   
-				   HSSFCell lastNameValue = bodyRow.createCell(1);
+				   XSSFCell lastNameValue = bodyRow.createCell(1);
 				   lastNameValue.setCellValue(employee.getLastname());
 				   lastNameValue.setCellStyle(bodyCellStyle);
 				   
-				   HSSFCell emailValue = bodyRow.createCell(2);
+				   XSSFCell emailValue = bodyRow.createCell(2);
 				   emailValue.setCellValue(employee.getEmail());
 				   emailValue.setCellStyle(bodyCellStyle);
 				   
@@ -325,6 +335,66 @@ public class EmployeeServiceImplementation implements EmployeeService{
 		{
 			return false;
 		}
+	}
+
+	@Override
+	public void store(MultipartFile file) {
+		try {
+			List<Employee> lstEmployee = parseExcelFile(file.getInputStream());
+    		// Save Employees to DataBase
+			employeeRepository.saveAll(lstEmployee);
+        } catch (IOException e) {
+        	throw new RuntimeException("FAIL! -> message = " + e.getMessage());
+        }
+		
+	}
+
+	private List<Employee> parseExcelFile(InputStream is) {
+		try {
+    		Workbook workbook = new XSSFWorkbook(is);
+     
+    		Sheet sheet = workbook.getSheet("Employees");
+    		Iterator<Row> rows = sheet.iterator();
+    		
+    		List<Employee> lstEmployees = new ArrayList<Employee>();
+    		
+    		int rowNumber = 0;
+    		while (rows.hasNext()) {
+    			Row currentRow = rows.next();
+    			
+    			// skip header
+    			if(rowNumber == 0) {
+    				rowNumber++;
+    				continue;
+    			}
+    			
+    			Iterator<Cell> cellsInRow = currentRow.iterator();
+
+    			Employee emp = new Employee();
+    			
+    			int cellIndex = 0;
+    			while (cellsInRow.hasNext()) {
+    				Cell currentCell = cellsInRow.next();
+    				
+    				if(cellIndex==0) { // First Name
+    					emp.setFirstname(currentCell.getStringCellValue());
+    				} else if(cellIndex==1) { // Last Name
+    					emp.setLastname(currentCell.getStringCellValue());
+    				} else if(cellIndex==2) { // Email
+    					emp.setEmail(currentCell.getStringCellValue());
+    				}
+    				
+    				cellIndex++;
+    			}
+    			
+    			lstEmployees.add(emp);
+    		}
+    		
+    		// Close WorkBook
+    		return lstEmployees;
+        } catch (IOException e) {
+        	throw new RuntimeException("FAIL! -> message = " + e.getMessage());
+        }
 	}
 
 }

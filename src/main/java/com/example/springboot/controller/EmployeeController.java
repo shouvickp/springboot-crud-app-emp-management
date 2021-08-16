@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.WebContext;
 
@@ -150,9 +152,9 @@ public class EmployeeController {
 		 if(isFlag)
 		  {
 			  System.out.println("file create hochche");
-			  String fullPath = request.getServletContext().getRealPath("resources/reports/"+"empList"+".xls");
+			  String fullPath = request.getServletContext().getRealPath("resources/reports/"+"empList"+".xlsx");
 			  System.out.println(fullPath);
-			  filedownload(fullPath,response,"empList.xls");
+			  filedownload(fullPath,response,"empList.xlsx");
 		  }
 	}
 	
@@ -188,5 +190,17 @@ public class EmployeeController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(bytes);
 
+    }
+	
+	
+	@PostMapping("/uploadEmployeeList")
+	public String uploadMultipartFile(@RequestParam("xlFile") MultipartFile file, Model model) {
+		try {
+			employeeService.store(file);
+//			model.addAttribute("message", "File uploaded successfully!");
+		} catch (Exception e) {
+			model.addAttribute("message", "Fail! -> uploaded filename: " + file.getOriginalFilename());
+		}
+        return "redirect:/";
     }
 }

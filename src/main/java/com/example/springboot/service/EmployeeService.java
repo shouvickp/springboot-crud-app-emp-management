@@ -6,6 +6,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.example.springboot.model.Employee;
 
 public interface EmployeeService {
@@ -26,5 +28,7 @@ public interface EmployeeService {
 
 	boolean createIDCard(Employee employee, ServletContext servletContext, HttpServletRequest request,
 			HttpServletResponse response);
+
+	void store(MultipartFile file);
 	
 }
