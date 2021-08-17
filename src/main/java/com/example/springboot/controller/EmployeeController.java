@@ -1,12 +1,21 @@
 package com.example.springboot.controller;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -113,6 +122,63 @@ public class EmployeeController {
 		  }
 	}
 	
+	@RequestMapping(value="/downloadAllICard", method= RequestMethod.GET)
+	public void downloadAll(HttpServletRequest req, HttpServletResponse res) throws IOException {
+		List<String> files = new ArrayList<>();
+		List<Employee> employees = employeeService.getAllEmployees();
+		for(Employee employee : employees) {
+			boolean isFlag = employeeService.createIDCard(employee, servletContext , req, res);
+			 if(isFlag)
+			  {
+				  System.out.println("icard create hochche");
+				  String fullPath = req.getServletContext().getRealPath("resources/reports/"+"emp_"+employee.getId()+".pdf");
+				  files.add(fullPath);
+//				  filedownload(fullPath,res,"emp_"+employee.getId()+"_IDCARD.pdf");
+			  }
+		}
+	
+		if(files!=null && files.size()>0) {
+			downloadZipFile(files,"IDCards.zip",res);
+		}	        
+	    
+	}
+	
+	private void downloadZipFile(List<String> files, String zipFile, HttpServletResponse res) {
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ZipOutputStream zos = new ZipOutputStream(baos);
+			byte[] bytes = new byte[4096];
+			for(String file :files) {
+				FileInputStream fis = new FileInputStream(file);
+				BufferedInputStream bis = new BufferedInputStream(fis);
+				zos.putNextEntry(new ZipEntry(file.substring(file.lastIndexOf("\\")+1)));
+				int bytesRead;
+				while((bytesRead = bis.read(bytes)) != -1) {
+					zos.write(bytes, 0, bytesRead);
+				}
+				zos.closeEntry();
+				bis.close();
+				fis.close();
+			}
+			zos.flush();
+			baos.flush();
+			zos.close();
+			baos.close();
+			
+			byte[] zip = baos.toByteArray();
+			ServletOutputStream sos = res.getOutputStream();
+			res.setContentType("application/zip");
+			res.setHeader("content-disposition", "attachment;fileName="+zipFile);
+			sos.write(zip);
+			sos.flush();
+			sos.close();
+			
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
 	private void filedownload(String fullPath, HttpServletResponse response, String fileName) {
 		File file = new File(fullPath);
 		final int BUFFER_SIZE = 4096;
